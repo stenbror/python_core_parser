@@ -1,5 +1,6 @@
 pub use crate::location::Location;
 
+
 type Ident = String;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -55,11 +56,6 @@ pub enum Cmpop {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Arguments {
-
-}
-
-#[derive(Clone, Debug, PartialEq)]
 pub struct Comprehension {
     pub target: Expression,
     pub iter: Expression,
@@ -85,6 +81,27 @@ impl<T> Node<T> {
     }
 }
 
+// Python Module nodes ////////////////////////////////////////////////////////////////////////////
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ModuleKind {
+    Module {
+        body: Vec<Statement>,
+        type_ignores: Vec<TypeIgnore>,
+    },
+    Interactive {
+        body: Vec<Statement>,
+    },
+    Expression {
+        body: Box<Expression>,
+    },
+    FunctionType {
+        argtypes: Vec<Expression>,
+        returns: Box<Expression>,
+    }
+}
+
+pub type Block = Node<ModuleKind>;
 
 // Python Expression nodes ////////////////////////////////////////////////////////////////////////
 
@@ -205,3 +222,242 @@ pub enum ExpressionKind {
 }
 
 type Expression = Node<ExpressionKind>;
+
+// Python Statement nodes /////////////////////////////////////////////////////////////////////////
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum StatementKind {
+    FunctionDef {
+        name: Ident,
+        args: Box<Arguments>,
+        body: Vec<Statement>,
+        decorator_list: Vec<Expression>,
+        returns: Option<Box<Expression>>,
+        type_comment: Option<String>,
+    },
+    AsyncFunctionDef {
+        name: Ident,
+        args: Box<Arguments>,
+        body: Vec<Statement>,
+        decorator_list: Vec<Expression>,
+        returns: Option<Box<Expression>>,
+        type_comment: Option<String>,
+    },
+    ClassDef {
+        name: Ident,
+        bases: Vec<Expression>,
+        keywords: Vec<Keyword>,
+        body: Vec<Statement>,
+        decorator_list: Vec<Expression>,
+    },
+    Return {
+        value: Option<Box<Expression>>,
+    },
+    Delete {
+        targets: Vec<Expression>,
+    },
+    Assign {
+        targets: Vec<Expression>,
+        value: Box<Expression>,
+        type_comment: Option<String>,
+    },
+    AugAssign {
+        target: Box<Expression>,
+        op: Operator,
+        value: Box<Expression>,
+    },
+    AnnAssign {
+        target: Box<Expression>,
+        annotation: Box<Expression>,
+        value: Option<Box<Expression>>,
+        simple: usize,
+    },
+    For {
+        target: Box<Expression>,
+        iter: Box<Expression>,
+        body: Vec<Statement>,
+        orelse: Vec<Statement>,
+        type_comment: Option<String>,
+    },
+    AsyncFor {
+        target: Box<Expression>,
+        iter: Box<Expression>,
+        body: Vec<Statement>,
+        orelse: Vec<Statement>,
+        type_comment: Option<String>,
+    },
+    While {
+        test: Box<Expression>,
+        body: Vec<Statement>,
+        orelse: Vec<Statement>,
+    },
+    If {
+        test: Box<Expression>,
+        body: Vec<Statement>,
+        orelse: Vec<Statement>,
+    },
+    With {
+        items: Vec<Withitem>,
+        body: Vec<Statement>,
+        type_comment: Option<String>,
+    },
+    AsyncWith {
+        items: Vec<Withitem>,
+        body: Vec<Statement>,
+        type_comment: Option<String>,
+    },
+    Match {
+        subject: Box<Expression>,
+        cases: Vec<MatchCase>,
+    },
+    Raise {
+        exc: Option<Box<Expression>>,
+        cause: Option<Box<Expression>>,
+    },
+    Try {
+        body: Vec<Statement>,
+        handlers: Vec<Excepthandler>,
+        orelse: Vec<Statement>,
+        finalbody: Vec<Statement>,
+    },
+    Assert {
+        test: Box<Expression>,
+        msg: Option<Box<Expression>>,
+    },
+    Import {
+        names: Vec<Alias>,
+    },
+    ImportFrom {
+        module: Option<Ident>,
+        names: Vec<Alias>,
+        level: Option<usize>,
+    },
+    Global {
+        names: Vec<Ident>,
+    },
+    Nonlocal {
+        names: Vec<Ident>,
+    },
+    Expr {
+        value: Box<Expression>,
+    },
+    Pass,
+    Break,
+    Continue
+}
+
+pub type Statement = Node<StatementKind>;
+
+// Python match node //////////////////////////////////////////////////////////////////////////////
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PatternKind {
+    MatchValue {
+        value: Box<Expression>,
+    },
+    MatchSingleton {
+        value: Constant,
+    },
+    MatchSequence {
+        patterns: Vec<Pattern>,
+    },
+    MatchMapping {
+        keys: Vec<Expression>,
+        patterns: Vec<Pattern>,
+        rest: Option<Ident>,
+    },
+    MatchClass {
+        cls: Box<Expression>,
+        patterns: Vec<Pattern>,
+        kwd_attrs: Vec<Ident>,
+        kwd_patterns: Vec<Pattern>,
+    },
+    MatchStar {
+        name: Option<Ident>,
+    },
+    MatchAs {
+        pattern: Option<Box<Pattern>>,
+        name: Option<Ident>,
+    },
+    MatchOr {
+        patterns: Vec<Pattern>,
+    },
+}
+
+pub type Pattern = Node<PatternKind>;
+
+// Extra utillities ///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ExcepthandlerKind {
+    ExceptHandler {
+        type_: Option<Box<Expression>>,
+        name: Option<Ident>,
+        body: Vec<Statement>,
+    },
+}
+pub type Excepthandler = Node<ExcepthandlerKind>;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Arguments {
+    pub posonlyargs: Vec<Arg>,
+    pub args: Vec<Arg>,
+    pub vararg: Option<Box<Arg>>,
+    pub kwonlyargs: Vec<Arg>,
+    pub kw_defaults: Vec<Expression>,
+    pub kwarg: Option<Box<Arg>>,
+    pub defaults: Vec<Expression>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ArgData {
+    pub arg: Ident,
+    pub annotation: Option<Box<Expression>>,
+    pub type_comment: Option<String>
+}
+pub type Arg = Node<ArgData>;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct KeywordData {
+    pub arg: Option<Ident>,
+    pub value: Expression
+}
+pub type Keyword = Node<KeywordData>;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct AliasData {
+    pub name: Ident,
+    pub asname: Option<Ident>,
+}
+pub type Alias = Node<AliasData>;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Withitem {
+    pub context_expr: Expression,
+    pub optional_vars: Option<Box<Expression>>
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct MatchCase {
+    pub pattern: Pattern,
+    pub guard: Option<Box<Expression>>,
+    pub body: Vec<Statement>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum TypeIgnore {
+    TypeIgnore { pos: usize, tag: String }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Constant {
+    None,
+    Bool(bool),
+    Str(String),
+    Bytes(Vec<u8>),
+    Int(i64),
+    Tuple(Vec<Constant>),
+    Float(f64),
+    Complex { real: f64, imag: f64 },
+    Ellipsis,
+}
