@@ -1,19 +1,22 @@
 
 use std::fmt::{self, Write};
 
+pub use crate::trivia::Trivia;
 pub use crate::location::Location;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct TokenBase<T> {
+pub struct TokenBase<T, S> {
     pub location: Location,
-    pub node: T
+    pub node: T,
+    pub trivias: S
 }
 
-impl<T> TokenBase<T> {
-    pub fn new(location: Location, node: T) -> Self {
+impl<T, S> TokenBase<T, S> {
+    pub fn new(location: Location, node: T, trivias: S) -> Self {
         TokenBase {
             location,
-            node
+            node,
+            trivias
         }
     }
 }
@@ -124,7 +127,7 @@ pub enum TokenKind {
     Bytes { value: Vec<u8> }
 }
 
-type Token = TokenBase<TokenKind>;
+type Token = TokenBase<TokenKind, Vec<Trivia>>;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum StringKind {

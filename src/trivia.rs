@@ -24,7 +24,7 @@ pub enum TriviaKind {
     Comment
 }
 
-type Trivia = TriviaBase<TriviaKind>;
+pub type Trivia = TriviaBase<TriviaKind>;
 
 impl fmt::Display for Trivia {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
